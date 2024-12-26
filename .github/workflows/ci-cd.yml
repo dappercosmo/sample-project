@@ -43,7 +43,8 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v1
         with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+                workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
+                service_account: 'sa-account@instant-ground-442614-q5.iam.gserviceaccount.com'
 
       - name: Configure Docker for GCP
         run: gcloud auth configure-docker
