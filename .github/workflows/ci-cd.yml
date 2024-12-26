@@ -58,10 +58,7 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker buildx build --push \
-            --tag gcr.io/instant-ground-442614-q5/spring-boot-app:latest \
-            --platform linux/amd64,linux/arm64 \
-            .
+          docker buildx build --push --tag gcr.io/instant-ground-442614-q5/spring-boot-app:latest --platform linux/amd64,linux/arm64 .
       
 
       # Step 9: Deploy to Cloud Run
