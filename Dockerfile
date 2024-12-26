@@ -1,5 +1,5 @@
 # Use the official Maven image to build the application
-FROM maven:3.8.6-openjdk-17 AS builder
+FROM maven:latest AS builder
 
 # Set the working directory in the container
 WORKDIR /app
@@ -24,7 +24,7 @@ FROM eclipse-temurin:17-jre
 WORKDIR /app
 
 # Copy the packaged JAR file from the builder stage
-COPY --from=builder /app/target/my-spring-boot-app.jar app.jar
+COPY --from=builder /app/target/sample-project-0.0.1-SNAPSHOT.jar app.jar
 
 # Expose the port the app will run on
 EXPOSE 8080
