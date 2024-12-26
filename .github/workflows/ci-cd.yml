@@ -28,13 +28,6 @@ jobs:
 
       - run: gcloud auth configure-docker
 
-      - name: Create GCR repository
-        run: |
-          gcloud artifacts repositories create sample-project \
-            --repository-format=docker \
-            --location=us-central1 \
-            --description="Container repository"
-
       - name: Build and Push to GCR
         run: |
           docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/sample-project:latest .
