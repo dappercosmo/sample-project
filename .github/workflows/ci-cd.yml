@@ -36,21 +36,28 @@ jobs:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      # Step 5: Authenticate Docker to GCR
+      # Step 5: Verify GCP Authentication
+      - name: Verify GCP Authentication
+        run: |
+          gcloud auth list
+          gcloud projects list
+
+      # Step 6: Authenticate Docker to GCR
       - name: Authenticate Docker to GCR
         run: gcloud auth configure-docker gcr.io
 
-      # Step 6: Build Docker image
+      # Step 7: Build Docker image
       - name: Build Docker image
         run: |
-          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-spring-boot-app:${{ github.sha }} .
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/sample-project:${{ github.sha }} .
 
+      # Step 8: Push Docker image to GCR
       - name: Push Docker image to GCR
         run: |
-          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-spring-boot-app:${{ github.sha }}
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/sample-project:${{ github.sha }}
 
-      # Step 8: Deploy to Google Kubernetes Engine (GKE)
+      # Step 9: Deploy to Google Kubernetes Engine (GKE)
       - name: Deploy to GKE
         run: |
           gcloud container clusters get-credentials my-cluster --zone us-central1-a --project ${{ secrets.GCP_PROJECT_ID }}
-          kubectl set image deployment/my-spring-boot-app my-spring-boot-app=gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-spring-boot-app:${{ github.sha }}
+          kubectl set image deployment/sample-project sample-project=gcr.io/${{ secrets.GCP_PROJECT_ID }}/sample-project:${{ github.sha }}
