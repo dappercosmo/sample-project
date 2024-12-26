@@ -50,17 +50,19 @@ jobs:
           workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
           service_account: 'sa-account@instant-ground-442614-q5.iam.gserviceaccount.com'
 
-      # Step 7: Configure Docker for GCP
       - name: Configure Docker for GCP
         run: gcloud auth configure-docker
 
-      # Step 8: Build and push Docker image
+      - name: Verify Authentication
+        run: gcloud auth list
+
       - name: Build and Push Docker Image
         run: |
           docker buildx build --push \
             --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/spring-boot-app:latest \
             --platform linux/amd64,linux/arm64 \
             .
+      
 
       # Step 9: Deploy to Cloud Run
       - name: Deploy to Cloud Run
