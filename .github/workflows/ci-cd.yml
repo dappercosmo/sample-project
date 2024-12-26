@@ -56,8 +56,9 @@ jobs:
       # Step 7: Build and push Docker image
       - name: Build and Push Docker Image
         run: |
-          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/spring-boot-app:latest .
-          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/spring-boot-app:latest
+          docker buildx build --push \
+            --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/spring-boot-app:latest \
+            --platform linux/amd64,linux/arm64 .
 
       # Step 8: Deploy to GCP
       - name: Deploy to Cloud Run
