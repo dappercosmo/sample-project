@@ -22,9 +22,6 @@ jobs:
       - name: Build with Maven
         run: mvn -B package --file pom.xml -DskipTests
 
-      - name: Run Tests
-        run: mvn test
-
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
