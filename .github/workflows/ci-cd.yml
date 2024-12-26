@@ -59,7 +59,7 @@ jobs:
       - name: Build and Push Docker Image
         run: |
           docker buildx build --push \
-            --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/spring-boot-app:latest \
+            --tag gcr.io/instant-ground-442614-q5/spring-boot-app:latest \
             --platform linux/amd64,linux/arm64 \
             .
       
