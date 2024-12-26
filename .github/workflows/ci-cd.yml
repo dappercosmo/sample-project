@@ -1,10 +1,7 @@
-name: Dockerize Spring Boot App with MySQL
+name: Build and Deploy to GCP
 
 on:
   push:
-    branches:
-      - dev
-  pull_request:
     branches:
       - dev
 
@@ -12,76 +9,56 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
-    services:
-      mysql:
-        image: mysql:8.0
-        ports:
-          - 3306:3306
-        env:
-          MYSQL_ROOT_PASSWORD: Rakeshmp@04
-          MYSQL_DATABASE: sample_db
-          MYSQL_USER: root
-          MYSQL_PASSWORD: Rakeshmp@04
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
-
     steps:
-      # Checkout the repository
+      # Step 1: Checkout the code
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Set up JDK for Maven/Gradle
+      # Step 2: Set up JDK 17 for the Spring Boot application
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          java-version: 17
+          java-version: '17'
           distribution: 'temurin'
 
-      # Cache Maven dependencies
-      - name: Cache Maven dependencies
+      # Step 3: Cache dependencies for faster builds
+      - name: Cache Maven Dependencies
         uses: actions/cache@v3
         with:
-          path: ~/.m2/repository
+          path: ~/.m2
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # Build the Spring Boot Application
+      # Step 4: Build the Spring Boot application
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      # Set up Docker
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+      # Step 5: Set up Docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Step 6: Log in to Google Container Registry
+      - name: Authenticate to GCP
+        id: auth
+        uses: google-github-actions/auth@v1
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
-      - name: Build Docker Image
-        run: docker build -t trial:latest .
+      - name: Configure Docker for GCP
+        run: gcloud auth configure-docker
 
-      # Push the Docker image to Docker Hub
-      - name: Push Docker Image
-        run: docker tag trial:latest your-docker-username/trial:latest
-        run: docker push your-docker-username/trial:latest
-
-      # Run the Docker container
-      - name: Run Docker Container with MySQL
+      # Step 7: Build and push Docker image
+      - name: Build and Push Docker Image
         run: |
-          docker network create springboot-network
-          docker run -d --name mysql-container \
-            --network springboot-network \
-            -e MYSQL_ROOT_PASSWORD=Rakeshmp@04 \
-            -e MYSQL_DATABASE=sample_db \
-            -e MYSQL_USER=root \
-            -e MYSQL_PASSWORD=Rakeshmp@04 \
-            mysql:8.0
-          docker run -d -p 8080:8080 --name spring-boot-app \
-            --network springboot-network \
-            -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql-container:3306/sample_db \
-            -e SPRING_DATASOURCE_USERNAME=root \
-            -e SPRING_DATASOURCE_PASSWORD=Rakeshmp@04 \
-            trial:latest
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/spring-boot-app:latest .
+          docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/spring-boot-app:latest
+
+      # Step 8: Deploy to GCP
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy spring-boot-app \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/spring-boot-app:latest \
+            --region ${{ secrets.GCP_REGION }} \
+            --platform managed \
+            --allow-unauthenticated
