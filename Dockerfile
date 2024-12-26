@@ -1,14 +1,16 @@
-# Start with a base image for Java
-FROM eclipse-temurin:17-jdk
+FROM eclipse-temurin:17-jdk as builder
 
-# Set the working directory inside the container
 WORKDIR /app
+COPY .mvn/ .mvn
+COPY mvnw pom.xml ./
+COPY src ./src
 
-# Copy the Spring Boot JAR file
-COPY target/sample-project-0.0.1-SNAPSHOT.jar app.jar
+RUN ./mvnw package -DskipTests
 
-# Expose the default port
+FROM eclipse-temurin:17-jre
+
+WORKDIR /app
+COPY --from=builder /app/target/*.jar app.jar
+
 EXPOSE 8080
-
-# Run the Spring Boot application
 ENTRYPOINT ["java", "-jar", "app.jar"]
