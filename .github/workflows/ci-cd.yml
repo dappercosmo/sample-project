@@ -3,11 +3,12 @@ name: CI/CD to GCP
 on:
   push:
     branches:
-      - dev  # Trigger the workflow on push to the main branch
+      - dev  # Trigger the workflow on push to the dev branch
 
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+
     steps:
       # Step 1: Checkout the code
       - name: Checkout code
@@ -16,12 +17,14 @@ jobs:
       # Step 2: Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
+        with:
+          driver: docker-container
 
-      # Step 3: Cache Docker layers to speed up the build
+      # Step 3: Cache Docker layers
       - name: Cache Docker layers
         uses: actions/cache@v2
         with:
-          path: /tmp/.buildx-cache
+          path: ~/.docker/cache
           key: ${{ runner.os }}-docker-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-docker-
@@ -33,23 +36,26 @@ jobs:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      # Step 5: Build Docker image
+      # Step 5: Authenticate Docker to GCR
+      - name: Authenticate Docker to GCR
+        run: gcloud auth configure-docker gcr.io
+
+      # Step 6: Build Docker image
       - name: Build Docker image
         run: |
-          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-spring-boot-app:${{ github.sha }} .
+          docker buildx build \
+            --platform linux/amd64 \
+            --cache-from=type=local,src=~/.docker/cache \
+            --cache-to=type=local,dest=~/.docker/cache \
+            -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-spring-boot-app:${{ github.sha }} .
 
-      # Step 6: Push Docker image to Google Container Registry (GCR)
+      # Step 7: Push Docker image to Google Container Registry (GCR)
       - name: Push Docker image to GCR
         run: |
           docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-spring-boot-app:${{ github.sha }}
 
-      # Step 7: Deploy to Google Kubernetes Engine (GKE)
+      # Step 8: Deploy to Google Kubernetes Engine (GKE)
       - name: Deploy to GKE
         run: |
           gcloud container clusters get-credentials my-cluster --zone us-central1-a --project ${{ secrets.GCP_PROJECT_ID }}
           kubectl set image deployment/my-spring-boot-app my-spring-boot-app=gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-spring-boot-app:${{ github.sha }}
-
-      # Alternatively, if you use Google App Engine:
-      # Step 8: Deploy to Google App Engine
-      # - name: Deploy to GAE
-      #   run: gcloud app browse
