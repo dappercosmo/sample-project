@@ -43,13 +43,8 @@ jobs:
       # Step 6: Build Docker image
       - name: Build Docker image
         run: |
-          docker buildx build \
-            --platform linux/amd64 \
-            --cache-from=type=local,src=~/.docker/cache \
-            --cache-to=type=local,dest=~/.docker/cache \
-            -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-spring-boot-app:${{ github.sha }} .
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-spring-boot-app:${{ github.sha }} .
 
-      # Step 7: Push Docker image to Google Container Registry (GCR)
       - name: Push Docker image to GCR
         run: |
           docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/my-spring-boot-app:${{ github.sha }}
