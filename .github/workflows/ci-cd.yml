@@ -9,7 +9,7 @@ on:
 env:
   PROJECT_ID: containerization-446104
   SERVICE_NAME: spring-app
-  REGION: us-central1-a
+  REGION: us-central1
 
 jobs:
   deploy:
